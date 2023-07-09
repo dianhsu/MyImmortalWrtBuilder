@@ -1,6 +1,9 @@
 name: Generate ImmortalWrt 23.05.0-rc2 Firmware
 
 on:
+  push: 
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       release: 
