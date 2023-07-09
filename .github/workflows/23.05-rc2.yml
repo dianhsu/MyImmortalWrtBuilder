@@ -2,6 +2,11 @@ name: Generate ImmortalWrt 23.05.0-rc2 Firmware
 
 on:
   workflow_dispatch:
+    inputs:
+      release: 
+        description: 将编译出的镜像上传到 Release
+        required: false
+        default: 'false'
 
 env:
   DOWNLOAD_BASE: https://downloads.immortalwrt.org
@@ -24,7 +29,7 @@ jobs:
       - name: Initialize Environment
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc rsync wget unzip python2 python3 qemu-utils mkisofs
+          sudo apt-get -y install build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc rsync wget unzip python2 python3 qemu-utils mkisofs rename
 
       - name: Setup Environment Variables
         run: |
@@ -37,27 +42,28 @@ jobs:
           mkdir image-builder
           tar -xvf $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
           rm -rf $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
-          mv $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64 $GITHUB_WORKSPACE/image-builder
-          cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/image-builder
+          cp -r $GITHUB_WORKSPACE/scripts/ $GITHUB_WORKSPACE/$VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64
 
       
       - name: Run Patch and DIY Scripts
-        working-directory: image-builder
+        working-directory: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-${{ env.TARGET }}.Linux-x86_64
         run: |
-          bash scripts/builder-patch.sh
-          bash scripts/clash.sh
-          bash scripts/zsh.sh
+          sed -e 's,https://downloads.immortalwrt.org,https://mirror.nju.edu.cn/immortalwrt,g' \
+          -e 's,https://mirrors.vsean.net/openwrt,https://mirror.nju.edu.cn/immortalwrt,g' \
+          -i.bak repositories.conf
+          bash scripts/custom/builder-patch.sh
+          bash scripts/custom/zsh.sh
 
       - name: Generate Firmware
-        working-directory: image-builder
+        working-directory: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-${{ env.TARGET }}.Linux-x86_64
         run: |
-          bash build.sh
+          bash scripts/custom/build.sh
 
       - name: Upload Firmware to Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.VENDOR }}-${{ env.VERSION }}-x86_64-images-${{ env.DATETIME }}
-          path: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-x86-64.Linux-x86_64/bin/targets/x86/64/*
+          name: ${{ env.VENDOR }}-${{ env.VERSION }}-${{ env.TARGET }}-images-${{ env.DATETIME }}
+          path: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-${{ env.TARGET }}.Linux-x86_64/bin/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/*
 
       - name: Upload Firmware to Release
         if: github.event.inputs.release == 'true'
@@ -65,7 +71,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
-          file: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-x86-64.Linux-x86_64/bin/targets/x86/64/*
+          file: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-${{ env.TARGET }}.Linux-x86_64/bin/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/*
           asset_name: ${{ github.event.repository.name }}-${{ github.sha }}
           tag: release-${{ env.DATE }}
           overwrite: true

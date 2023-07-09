@@ -4,7 +4,6 @@
 make info
 
 # 主配置名称
-PROFILE="generic"
 
 PACKAGES=""
 
@@ -68,7 +67,7 @@ PACKAGES="$PACKAGES luci-i18n-eqos-zh-cn"
 PACKAGES="$PACKAGES luci-i18n-nlbwmon-zh-cn"
 
 # 界面翻译补全
-PACKAGES="$PACKAGES luci-i18n-opkg-zh-cn luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn luci-i18n-turboacc-zh-cn"
+PACKAGES="$PACKAGES luci-i18n-opkg-zh-cn luci-i18n-base-zh-cn luci-i18n-firewall-zh-cn"
 
 # Packages 文件夹下的 ipk 包
 #PACKAGES="$PACKAGES luci-i18n-wrtbwmon-zh-cn"
@@ -85,7 +84,7 @@ PACKAGES="$PACKAGES vim-fuller"
 # X/Y/ZMODEM 文件传输
 PACKAGES="$PACKAGES lrzsz"
 # OpenSSH
-PACKAGES="$PACKAGES openssh-server openssh-client"
+#PACKAGES="$PACKAGES openssh-server openssh-client"
 # Netdata 系统监控界面
 PACKAGES="$PACKAGES netdata"
 
@@ -93,6 +92,6 @@ PACKAGES="$PACKAGES netdata"
 FILES="files"
 
 # 禁用 openssh-server 的 sshd 服务和 docker 的 dockerd 服务以防止冲突
-DISABLED_SERVICES="sshd dockerd"
+#DISABLED_SERVICES="sshd dockerd"
 
-make image PROFILE="$PROFILE" PACKAGES="$PACKAGES" FILES="$FILES" DISABLED_SERVICES="$DISABLED_SERVICES"
+make image PACKAGES="$PACKAGES" FILES="$FILES" DISABLED_SERVICES="$DISABLED_SERVICES"
