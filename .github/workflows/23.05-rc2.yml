@@ -30,7 +30,7 @@ jobs:
         run: |
           echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
           echo "DATETIME=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-          echo "${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}" >> $TARGET
+          echo "TARGET=${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}" >> $GITHUB_ENV
       - name: Download Image Builder
         run: |
           wget $DOWNLOAD_BASE/releases/$VERSION/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/$VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
