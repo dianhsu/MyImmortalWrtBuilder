@@ -1,4 +1,4 @@
-name: Generate ImmortalWrt 23.05-rc2 Firmware
+name: Generate ImmortalWrt 23.05.0-rc2 Firmware
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
 env:
   DOWNLOAD_BASE: https://downloads.immortalwrt.org
   VENDOR: immortalwrt
-  VERSION: 23.05-rc2
+  VERSION: 23.05.0-rc2
 
 jobs:
   build:
@@ -34,8 +34,10 @@ jobs:
       - name: Download Image Builder
         run: |
           wget $DOWNLOAD_BASE/releases/$VERSION/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/$VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
-          tar -xvf $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz -C image-builder
+          mkdir image-builder
+          tar -xvf $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
           rm -rf $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
+          mv $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64 $GITHUB_WORKSPACE/image-builder
           cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/image-builder
 
       
