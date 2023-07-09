@@ -18,13 +18,15 @@ on:
 env:
   DOWNLOAD_BASE: https://downloads.immortalwrt.org
   VENDOR: immortalwrt
-  VERSION: 23.05.0-rc2
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        version: 
+          - 23.05.0-rc2
+          - 21.02.6
         arch: 
           - target: x86
             subtarget: "64" 
@@ -43,6 +45,7 @@ jobs:
           echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
           echo "DATETIME=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
           echo "TARGET=${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}" >> $GITHUB_ENV
+          echo "VERSION=${{ matrix.version }}" >> $GITHUB_ENV
       - name: Download Image Builder
         run: |
           wget $DOWNLOAD_BASE/releases/$VERSION/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/$VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
@@ -78,5 +81,5 @@ jobs:
         with:
           file_glob: true
           file: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-${{ env.TARGET }}.Linux-x86_64/bin/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/*
-          tag: release-${{ env.DATE }}
+          tag: release-${{ env.VERSION }}-${{ env.DATE }}
           overwrite: true
