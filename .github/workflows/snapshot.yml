@@ -1,0 +1,81 @@
+name: Generate ImmortalWrt Snapshot Firmware
+
+on:
+  push: 
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release: 
+        description: 将编译出的镜像上传到 Release
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  DOWNLOAD_BASE: https://downloads.immortalwrt.org
+  VENDOR: immortalwrt
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: 
+          - target: x86
+            subtarget: "64" 
+          - target: bcm27xx
+            subtarget: bcm2711
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Initialize Environment
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc rsync wget unzip python2 python3 qemu-utils mkisofs rename
+
+      - name: Setup Environment Variables
+        run: |
+          echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+          echo "DATETIME=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+          echo "TARGET=${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}" >> $GITHUB_ENV
+      - name: Download Image Builder
+        run: |
+          wget $DOWNLOAD_BASE/snapshot/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/$VENDOR-imagebuilder-$TARGET.Linux-x86_64.tar.xz
+          mkdir image-builder
+          tar -xvf $VENDOR-imagebuilder-$TARGET.Linux-x86_64.tar.xz
+          rm -rf $VENDOR-imagebuilder-$TARGET.Linux-x86_64.tar.xz
+          cp -r $GITHUB_WORKSPACE/scripts/ $GITHUB_WORKSPACE/$VENDOR-imagebuilder-$TARGET.Linux-x86_64
+
+      
+      - name: Run Patch and DIY Scripts
+        working-directory: ${{ env.VENDOR }}-imagebuilder-${{ env.TARGET }}.Linux-x86_64
+        run: |
+          # sed -e 's,https://downloads.immortalwrt.org,https://mirror.nju.edu.cn/immortalwrt,g' \
+          # -e 's,https://mirrors.vsean.net/openwrt,https://mirror.nju.edu.cn/immortalwrt,g' \
+          # -i.bak repositories.conf
+          bash scripts/custom/builder-patch.sh
+          bash scripts/custom/zsh.sh
+
+      - name: Generate Firmware
+        working-directory: ${{ env.VENDOR }}-imagebuilder-${{ env.TARGET }}.Linux-x86_64
+        run: |
+          bash scripts/custom/build.sh
+
+      - name: Upload Firmware to Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.VENDOR }}-${{ env.TARGET }}-images-${{ env.DATETIME }}
+          path: ${{ env.VENDOR }}-imagebuilder-${{ env.TARGET }}.Linux-x86_64/bin/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/*
+
+      - name: Upload Firmware to Release
+        if: github.event.inputs.release == 'true'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: ${{ env.VENDOR }}-imagebuilder-${{ env.TARGET }}.Linux-x86_64/bin/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/*
+          tag: release-snapshot-${{ env.DATE }}
+          overwrite: true
