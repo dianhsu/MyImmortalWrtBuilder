@@ -73,9 +73,7 @@ jobs:
         if: github.event.inputs.release == 'true'
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           file: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-${{ env.TARGET }}.Linux-x86_64/bin/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/*
-          asset_name: ${{ github.event.repository.name }}-${{ github.sha }}
           tag: release-${{ env.DATE }}
           overwrite: true
