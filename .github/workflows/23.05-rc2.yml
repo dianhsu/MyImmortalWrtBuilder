@@ -52,9 +52,9 @@ jobs:
       - name: Run Patch and DIY Scripts
         working-directory: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-${{ env.TARGET }}.Linux-x86_64
         run: |
-          sed -e 's,https://downloads.immortalwrt.org,https://mirror.nju.edu.cn/immortalwrt,g' \
-          -e 's,https://mirrors.vsean.net/openwrt,https://mirror.nju.edu.cn/immortalwrt,g' \
-          -i.bak repositories.conf
+          # sed -e 's,https://downloads.immortalwrt.org,https://mirror.nju.edu.cn/immortalwrt,g' \
+          # -e 's,https://mirrors.vsean.net/openwrt,https://mirror.nju.edu.cn/immortalwrt,g' \
+          # -i.bak repositories.conf
           bash scripts/custom/builder-patch.sh
           bash scripts/custom/zsh.sh
 
