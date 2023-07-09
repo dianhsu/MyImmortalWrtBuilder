@@ -44,7 +44,7 @@ jobs:
           echo "TARGET=${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}" >> $GITHUB_ENV
       - name: Download Image Builder
         run: |
-          wget $DOWNLOAD_BASE/snapshot/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/$VENDOR-imagebuilder-$TARGET.Linux-x86_64.tar.xz
+          wget $DOWNLOAD_BASE/snapshots/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/$VENDOR-imagebuilder-$TARGET.Linux-x86_64.tar.xz
           mkdir image-builder
           tar -xvf $VENDOR-imagebuilder-$TARGET.Linux-x86_64.tar.xz
           rm -rf $VENDOR-imagebuilder-$TARGET.Linux-x86_64.tar.xz
