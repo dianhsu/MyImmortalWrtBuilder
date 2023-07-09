@@ -1,36 +1,69 @@
-# This is a basic workflow to help you get started with Actions
+name: Generate ImmortalWrt 23.05-rc2 Firmware
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+env:
+  DOWNLOAD_BASE: https://downloads.immortalwrt.org
+  VENDOR: immortalwrt
+  VERSION: 23.05-rc2
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: 
+          - target: x86
+            subtarget: "64" 
+          - target: bcm27xx
+            subtarget: bcm2711
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Initialize Environment
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          sudo apt-get -qq update
+          sudo apt-get -qq install build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc rsync wget unzip python qemu-utils mkisofs
+
+      - name: Setup Environment Variables
+        run: |
+          echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+          echo "DATETIME=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+          echo "${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}" >> $TARGET
+      - name: Download Image Builder
+        run: |
+          wget $DOWNLOAD_BASE/releases/$VERSION/targets/${{ matrix.arch.target }}/${{ matrix.arch.subtarget }}/$VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
+          tar -xvf $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz -C image-builder
+          rm -rf $VENDOR-imagebuilder-$VERSION-$TARGET.Linux-x86_64.tar.xz
+          cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/image-builder
+
+      
+      - name: Run Patch and DIY Scripts
+        working-directory: image-builder
+        run: |
+          bash scripts/builder-patch.sh
+          bash scripts/clash.sh
+          bash scripts/zsh.sh
+
+      - name: Generate Firmware
+        working-directory: image-builder
+        run: |
+          bash build.sh
+
+      - name: Upload Firmware to Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.VENDOR }}-${{ env.VERSION }}-x86_64-images-${{ env.DATETIME }}
+          path: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-x86-64.Linux-x86_64/bin/targets/x86/64/*
+
+      - name: Upload Firmware to Release
+        if: github.event.inputs.release == 'true'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          file: ${{ env.VENDOR }}-imagebuilder-${{ env.VERSION }}-x86-64.Linux-x86_64/bin/targets/x86/64/*
+          asset_name: ${{ github.event.repository.name }}-${{ github.sha }}
+          tag: release-${{ env.DATE }}
+          overwrite: true
