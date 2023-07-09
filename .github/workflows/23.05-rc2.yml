@@ -7,6 +7,10 @@ on:
         description: 将编译出的镜像上传到 Release
         required: false
         default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 env:
   DOWNLOAD_BASE: https://downloads.immortalwrt.org
